@@ -54,8 +54,8 @@ long long count_inversions_bit(vector<int>& arr) {
     int m = sorted_arr.size();
     vector<int> bit(m + 1, 0);
 
-    auto update = [&](int i) { for (; i <= m; i += i & -i) bit[i]++; };
-    auto query = [&](int i) { int s = 0; for (; i > 0; i -= i & -i) s += bit[i]; return s; };
+    auto update = [&](int i) { for (; i <= m; i = i + i & -i) bit[i]++; };
+    auto query = [&](int i) { int s = 0; for (; i > 0; i -= i & -i) s = s + bit[i]; return s; };
 
     long long inv = 0;
     int i = n - 1;

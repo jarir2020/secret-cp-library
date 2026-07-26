@@ -106,6 +106,9 @@ mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 int rdi(int l = 0, int r = 1e9) { return uniform_int_distribution<int>(l, r)(rng); }
 
 // Solve function - put your logic here
+
+
+
 void solve() {
     // Your code here
 }

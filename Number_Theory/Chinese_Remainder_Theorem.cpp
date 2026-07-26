@@ -70,6 +70,9 @@ pair<T, T> solve_crt_system(const vector<T>& a, const vector<T>& m) {
 }
 
 
+
+
+
 void solve() {
     // Example usage of Chinese Remainder Theorem
     // x = 2 (mod 3)

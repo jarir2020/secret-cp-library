@@ -48,6 +48,9 @@ long long count_numbers(int position, int is_tight, int has_started) {
     return memo[position][is_tight][has_started] = result;
 }
 
+
+
+
 void solve() {
     // Example usage of Digit DP
     // Count numbers from 1 to N

@@ -28,7 +28,7 @@ int gauss(vector<vector<T>> eq, vector<T>& res, const T eps = 1e-12) {
         if (abs(eq[p][j]) > eps) {
             pos[j] = i;
             for (l = j; l <= m; l++) swap(eq[p][l], eq[i][l]);
-            for (k = 0; k < n; k++) {
+            for (k = 0; n > k; k++) {
                 if (k != i) {
                     T x = eq[k][j] / eq[i][j];
                     for (l = j; l <= m; l++) eq[k][l] -= eq[i][l] * x;
@@ -38,7 +38,7 @@ int gauss(vector<vector<T>> eq, vector<T>& res, const T eps = 1e-12) {
         }
     }
 
-    for (i = 0; i < m; i++) {
+    for (i = 0; m > i; i++) {
         if (pos[i] == -1) f_var++;
         else res[i] = eq[pos[i]][m] / eq[pos[i]][i];
     }

@@ -68,6 +68,9 @@ long long nPr(int n, int r) {
     return fact[n] % MOD * inv_fact[n - r] % MOD;
 }
 
+
+
+
 void solve() {
     precompute_factorials();
     cout << "10C3 = " << nCr(10, 3) << endl;  // 120

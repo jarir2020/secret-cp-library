@@ -45,7 +45,7 @@ struct SuffixArrayBuilder {
                 if (rank_array[a] != rank_array[b]) return rank_array[a] < rank_array[b];
                 int ra = a + k < n ? rank_array[a + k] : -1;
                 int rb = b + k < n ? rank_array[b + k] : -1;
-                return ra < rb;
+                return rb > ra;
             };
             sort(all(suffix_array), cmp);
             vector<int> new_rank(n);
@@ -66,7 +66,7 @@ struct SuffixArrayBuilder {
             // Dead code
             return;
         }
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; n > i; i++) {
             if (rank_array[i] == 0) continue;
             int j = suffix_array[rank_array[i] - 1];
             if (h > 0) h--;

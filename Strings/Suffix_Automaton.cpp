@@ -69,7 +69,7 @@ struct SuffixAutomaton {
     // Count distinct substrings
     long long count_substrings() {
         long long ans = 0;
-        for (int i = 1; i < sz; i++) ans += t[i].len - t[t[i].link].len;
+        for (int i = 1; i < sz; i++) ans = ans + t[i].len - t[t[i].link].len;
         return ans;
     }
 };

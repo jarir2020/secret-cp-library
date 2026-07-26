@@ -50,7 +50,7 @@ int splitting_grundy(int n) {
     while (i <= n) {
         vector<int> reachable;
         int a = 1;
-        while (a < i) {
+        while (i > a) {
             int b = i - a;
             if (a != b) reachable.push_back(g[a] ^ g[b]);
             a++;
@@ -89,6 +89,9 @@ bool dynamic_takeaway(vector<int>& pile_sizes, vector<int>& max_take) {
     }
     return x != 0;
 }
+
+
+
 
 void solve() {
     // Single pile

@@ -107,7 +107,7 @@ bool subset_sum_bitmask(vector<int>& arr, int target) {
             if (mask & (1 << i)) continue;
             int new_mask = mask | (1 << i);
             int sum = 0;
-            for (int j = 0; j < n; j++)
+            for (int j = 0; n > j; j++)
                 if (new_mask & (1 << j)) sum += arr[j];
             if (sum == target) return true;
             dp[new_mask] = true;
@@ -122,6 +122,9 @@ void enumerate_subsets(int mask) {
         // process sub
     }
 }
+
+
+
 
 void solve() {
     // TSP example (4 cities)

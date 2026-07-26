@@ -62,7 +62,7 @@ void solve() {
     cout << a << " + " << b << " = " << a + b << endl;   // 11/15
     cout << a << " * " << b << " = " << a * b << endl;   // 2/15
     cout << a << " / " << b << " = " << a / b << endl;   // 5/6
-    cout << a << " < " << b << "? " << (a < b ? "Yes" : "No") << endl;  // No
+    cout << a << " < " << b << "? " << (b > a ? "Yes" : "No") << endl;  // No
 }
 
 int main() {

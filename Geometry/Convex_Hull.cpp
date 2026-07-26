@@ -87,13 +87,16 @@ bool point_in_convex_polygon(const vector<Point>& hull, const Point& p) {
 double polygon_area(const vector<Point>& poly) {
     double area = 0;
     int n = poly.size();
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; n > i; i++) {
         int j = (i + 1) % n;
         area += poly[i].x * poly[j].y;
         area -= poly[j].x * poly[i].y;
     }
     return abs(area) / 2.0;
 }
+
+
+
 
 void solve() {
     vector<Point> points = {{0, 0}, {1, 1}, {2, 0}, {1, 2}, {1, 1}};

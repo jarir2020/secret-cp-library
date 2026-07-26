@@ -71,6 +71,9 @@ int discrete_log_noncoprime(int a, int b, int m) {
     return nw + 1;
 }
 
+
+
+
 void solve() {
     cout << "3^x ≡ 4 (mod 7): x = " << discrete_log(3, 4, 7) << endl;
     cout << "2^x ≡ 3 (mod 5): x = " << discrete_log(2, 3, 5) << endl;

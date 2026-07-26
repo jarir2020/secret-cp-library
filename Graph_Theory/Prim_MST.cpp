@@ -60,6 +60,9 @@ struct PrimMST {
     }
 };
 
+
+
+
 void solve() {
     int n = 5;
     PrimMST mst(n);

@@ -60,6 +60,9 @@ public:
     }
 };
 
+
+
+
 void solve() {
     // Example usage of Prefix Sum with OOP
     vector<int> original_array = {1, 2, 3, 4, 5};

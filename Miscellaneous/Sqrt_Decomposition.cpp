@@ -84,6 +84,9 @@ struct SqrtDecomposition {
 // Mo's Algorithm is in Data_Structures/Mos_Algorithm.cpp
 // This is the block-based decomposition for online queries
 
+
+
+
 void solve() {
     vector<long long> arr = {1, 2, 3, 4, 5, 6, 7, 8};
     SqrtDecomposition sd(arr);

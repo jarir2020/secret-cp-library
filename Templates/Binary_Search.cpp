@@ -55,6 +55,9 @@ public:
     }
 };
 
+
+
+
 void solve() {
     // Example usage of Binary Search with OOP
     std::unique_ptr<SearchAlgorithm> searcher = std::make_unique<BinarySearcher>();

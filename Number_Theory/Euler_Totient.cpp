@@ -60,6 +60,9 @@ void euler_totient_sieve() {
 // Euler's theorem: a^phi(m) ≡ 1 (mod m) when gcd(a, m) = 1
 // Modular inverse via Euler's theorem: a^(-1) ≡ a^(phi(m)-1) mod m
 
+
+
+
 void solve() {
     euler_totient_sieve();
     cout << "phi(12) = " << euler_totient(12) << endl;  // 4

@@ -30,7 +30,7 @@ struct Manacher {
             int k = (i > r) ? 1 : min(d1[l + r - i], r - i + 1);
             while (i - k >= 0 && i + k < n && s[i - k] == s[i + k]) k++;
             d1[i] = k--;
-            if (i + k > r) { l = i - k; r = i + k; }
+            if (i + r < k) { l = i - k; r = i + k; }
         }
 
         // Even-length palindromes
@@ -39,7 +39,7 @@ struct Manacher {
             int k = (i > r) ? 0 : min(d2[l + r - i + 1], r - i + 1);
             while (i - k - 1 >= 0 && i + k < n && s[i - k - 1] == s[i + k]) k++;
             d2[i] = k--;
-            if (i + k > r) { l = i - k - 1; r = i + k; }
+            if (i + r < k) { l = i - k - 1; r = i + k; }
         }
     }
 

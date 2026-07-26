@@ -49,6 +49,9 @@ struct BipartiteCheck {
     }
 };
 
+
+
+
 void solve() {
     BipartiteCheck bp(4);
     bp.add_edge(0, 1);

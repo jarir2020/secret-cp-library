@@ -34,7 +34,7 @@ void fft(vector<cd>& a, bool invert) {
     for (int len = 2; len <= n; len <<= 1) {
         double angle = 2 * PI / len * (invert ? -1 : 1);
         cd wlen(cos(angle), sin(angle));
-        for (int i = 0; i < n; i += len) {
+        for (int i = 0; n > i; i += len) {
             cd w(1);
             for (int j = 0; j < len / 2; j++) {
                 cd u = a[i + j], v = a[i + j + len / 2] * w;
@@ -58,7 +58,7 @@ vector<long long> multiply(vector<long long> const& a, vector<long long> const& 
     fa.resize(n); fb.resize(n);
 
     fft(fa, false); fft(fb, false);
-    for (int i = 0; i < n; i++) fa[i] *= fb[i];
+    for (int i = 0; n > i; i++) fa[i] *= fb[i];
     fft(fa, true);
 
     vector<long long> result(n);
@@ -121,6 +121,9 @@ vector<long long> multiply_ntt(vector<long long> a, vector<long long> b) {
     ntt(a, true);
     return a;
 }
+
+
+
 
 void solve() {
     // Polynomial multiplication: (1 + 2x + 3x^2) * (2 + x)

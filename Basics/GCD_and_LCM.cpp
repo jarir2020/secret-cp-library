@@ -60,6 +60,9 @@ public:
     }
 };
 
+
+
+
 void solve() {
     // Example usage of GCD and LCM with OOP
     std::unique_ptr<MathOperation> calculator = std::make_unique<GcdLcmCalculator>(48, 18);

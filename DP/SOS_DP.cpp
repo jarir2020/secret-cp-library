@@ -99,6 +99,9 @@ void count_or_pairs(vector<int>& a, vector<long long>& cnt) {
     }
 }
 
+
+
+
 void solve() {
     // SOS DP example
     int n = 3; // 3 bits

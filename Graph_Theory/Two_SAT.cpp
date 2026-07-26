@@ -76,6 +76,9 @@ struct TwoSAT {
     bool get_value(int i) { return assignment[i]; }
 };
 
+
+
+
 void solve() {
     // Example: (x0 OR x1) AND (NOT x0 OR x1) AND (x0 OR NOT x1)
     // Solution: x0 = true, x1 = true

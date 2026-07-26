@@ -65,6 +65,9 @@ public:
     }
 };
 
+
+
+
 void solve() {
     // Example usage of BFS with OOP
     int n = 5;

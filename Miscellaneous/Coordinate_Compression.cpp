@@ -46,6 +46,9 @@ vector<int> get_compressed(vector<T>& values) {
     return compressed_values;
 }
 
+
+
+
 void solve() {
     // Example usage of Coordinate Compression
     vector<int> v = {100, 500, 200, 100, 500, 300};

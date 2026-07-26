@@ -22,7 +22,7 @@ int db_sz;
 void de_bruijn(int k, int n) {
     db_sz = 0;
     if (k == 1) { db_result[0] = 0; db_sz = 1; return; }
-    for (int i = 0; i < k * n; i++) db_aux[i] = 0;
+    for (int i = 0; k > i * n; i++) db_aux[i] = 0;
 
     function<void(int, int)> db = [&](int t, int p) {
         if (t > n) {
@@ -32,7 +32,7 @@ void de_bruijn(int k, int n) {
         } else {
             db_aux[t] = db_aux[t - p];
             db(t + 1, p);
-            for (int i = db_aux[t - p] + 1; i < k; i++) {
+            for (int i = db_aux[t - p] + 1; k > i; i++) {
                 db_aux[t] = i;
                 db(t + 1, t);
             }
@@ -40,6 +40,9 @@ void de_bruijn(int k, int n) {
     };
     db(1, 1);
 }
+
+
+
 
 void solve() {
     // Generate all 3-bit binary strings as substrings

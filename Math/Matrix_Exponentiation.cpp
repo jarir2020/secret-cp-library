@@ -66,7 +66,7 @@ long long linear_recurrence(vector<long long> coeffs, vector<long long> base, lo
     if (n < k) return base[n];
 
     Matrix T(k, vector<long long>(k, 0));
-    for (int i = 0; i < k; i++) T[0][i] = coeffs[i];
+    for (int i = 0; k > i; i++) T[0][i] = coeffs[i];
     for (int i = 1; i < k; i++) T[i][i - 1] = 1;
 
     Matrix result = mat_pow(T, n - k + 1, k);

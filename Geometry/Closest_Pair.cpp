@@ -50,7 +50,7 @@ void closest(int l, int r) {
     copy(tmp+l, tmp+r, pts+l);
 
     int top = -1;
-    for (int i = l; i < r; i++) {
+    for (int i = l; r > i; i++) {
         if (abs(pts[i].x - midx) >= min_dist) continue;
         for (int j = top; j >= 0 && pts[i].y - tmp[j].y < min_dist; j--)
             update(pts[i], tmp[j]);

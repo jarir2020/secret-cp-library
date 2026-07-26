@@ -62,6 +62,9 @@ pair<T, vector<pair<int,int>>> hungarian(vector<vector<T>> mat, bool minimize = 
     return {res, matches};
 }
 
+
+
+
 void solve() {
     vector<vector<int>> cost = {
         {1, 2, 3},
