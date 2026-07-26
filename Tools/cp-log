@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""
+Submission Tracker — log and track your Codeforces submissions
+Usage: cp-log add <contest> <problem> <verdict> [--time MM:SS] [--tags tag1,tag2]
+       cp-log list [--contest N] [--verdict AC] [--tag T]
+       cp-log stats
+"""
+import sys, os, json, argparse
+from datetime import datetime
+from collections import Counter
+
+LOG_FILE = os.path.expanduser('~/.cp_submissions.json')
+
+def load_log():
+    if os.path.exists(LOG_FILE):
+        with open(LOG_FILE) as f:
+            return json.load(f)
+    return []
+
+def save_log(data):
+    with open(LOG_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def cmd_add(args):
+    log = load_log()
+    entry = {
+        'contest': args.contest,
+        'problem': args.problem,
+        'verdict': args.verdict.upper(),
+        'time': args.time or '',
+        'tags': args.tags.split(',') if args.tags else [],
+        'timestamp': datetime.now().isoformat(),
+    }
+    log.append(entry)
+    save_log(log)
+    verdict_icon = '✅' if args.verdict.upper() == 'AC' else '❌'
+    print(f"{verdict_icon} Logged: {args.contest}/{args.problem} — {args.verdict.upper()}")
+
+def cmd_list(args):
+    log = load_log()
+    if args.contest:
+        log = [e for e in log if e['contest'] == args.contest]
+    if args.verdict:
+        log = [e for e in log if e['verdict'] == args.verdict.upper()]
+    if args.tag:
+        log = [e for e in log if args.tag in e.get('tags', [])]
+
+    if not log:
+        print("No matching entries")
+        return
+
+    print(f"{'Date':<12} {'Contest':<10} {'Problem':<10} {'Verdict':<6} {'Time':<8} {'Tags'}")
+    print("-" * 70)
+    for e in log:
+        date = e['timestamp'][:10]
+        tags = ', '.join(e.get('tags', []))
+        icon = '✅' if e['verdict'] == 'AC' else '❌'
+        print(f"{date:<12} {e['contest']:<10} {e['problem']:<10} {icon} {e.get('time',''):<8} {tags}")
+
+def cmd_stats(args):
+    log = load_log()
+    if not log:
+        print("No submissions logged yet")
+        return
+
+    total = len(log)
+    ac = sum(1 for e in log if e['verdict'] == 'AC')
+    wa = sum(1 for e in log if e['verdict'] == 'WA')
+    tle = sum(1 for e in log if e['verdict'] == 'TLE')
+    re = sum(1 for e in log if e['verdict'] == 'RE')
+
+    print(f"Total submissions: {total}")
+    print(f"  ✅ AC:  {ac} ({100*ac//total}%)")
+    print(f"  ❌ WA:  {wa} ({100*wa//total}%)")
+    print(f"  ⏰ TLE: {tle} ({100*tle//total}%)")
+    print(f"  💥 RE:  {re} ({100*re//total}%)")
+    print()
+
+    # Tag frequency
+    all_tags = []
+    for e in log:
+        all_tags.extend(e.get('tags', []))
+    if all_tags:
+        print("Most used tags:")
+        for tag, count in Counter(all_tags).most_common(10):
+            print(f"  {tag}: {count}")
+
+    # Contest frequency
+    contests = Counter(e['contest'] for e in log)
+    if len(contests) > 1:
+        print(f"\nContests attempted: {len(contests)}")
+
+def main():
+    parser = argparse.ArgumentParser(description='Submission Tracker')
+    sub = parser.add_subparsers(dest='command')
+
+    add_p = sub.add_parser('add', help='Log a submission')
+    add_p.add_argument('contest')
+    add_p.add_argument('problem')
+    add_p.add_argument('verdict')
+    add_p.add_argument('--time', help='Solve time (MM:SS)')
+    add_p.add_argument('--tags', help='Comma-separated tags')
+
+    list_p = sub.add_parser('list', help='List submissions')
+    list_p.add_argument('--contest', help='Filter by contest')
+    list_p.add_argument('--verdict', help='Filter by verdict')
+    list_p.add_argument('--tag', help='Filter by tag')
+
+    sub.add_parser('stats', help='Show statistics')
+
+    args = parser.parse_args()
+    if args.command == 'add': cmd_add(args)
+    elif args.command == 'list': cmd_list(args)
+    elif args.command == 'stats': cmd_stats(args)
+    else: parser.print_help()
+
+if __name__ == '__main__':
+    main()

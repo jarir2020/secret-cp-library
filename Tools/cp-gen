@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""
+Test Case Generator — generate random test cases for stress testing
+Usage: cp-gen [options]
+
+Options:
+  --n N          Array size / number of elements (default: 10)
+  --max-val V    Maximum value (default: 100)
+  --min-val V    Minimum value (default: 1)
+  --t N          Number of test cases (default: 1)
+  --type TYPE    Type: array, tree, graph, string, pairs (default: array)
+  --seed S       Random seed (default: random)
+  --connected    For graph/tree: ensure connectivity
+"""
+import sys, random, argparse
+
+def gen_array(args):
+    n = random.randint(1, args.n)
+    return [random.randint(args.min_val, args.max_val) for _ in range(n)]
+
+def gen_tree(n):
+    """Generate a random tree with n nodes (1-indexed)"""
+    edges = []
+    for i in range(2, n + 1):
+        parent = random.randint(1, i - 1)
+        edges.append((parent, i))
+    return edges
+
+def gen_graph(n, m=None):
+    """Generate a random graph"""
+    if m is None:
+        m = min(n * (n - 1) // 2, n + random.randint(0, n))
+    edges = set()
+    # Ensure connectivity
+    for i in range(2, n + 1):
+        j = random.randint(1, i - 1)
+        edges.add((min(i, j), max(i, j)))
+    # Add random edges
+    while len(edges) < m:
+        u, v = random.randint(1, n), random.randint(1, n)
+        if u != v:
+            edges.add((min(u, v), max(u, v)))
+    return list(edges)
+
+def gen_string(args):
+    length = random.randint(1, args.n)
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'
+    return ''.join(random.choice(alphabet) for _ in range(length))
+
+def gen_pairs(args):
+    n = random.randint(1, args.n)
+    return [(random.randint(args.min_val, args.max_val), random.randint(args.min_val, args.max_val)) for _ in range(n)]
+
+def main():
+    parser = argparse.ArgumentParser(description='Test Case Generator')
+    parser.add_argument('--n', type=int, default=10, help='Size / max elements')
+    parser.add_argument('--max-val', type=int, default=100, help='Max value')
+    parser.add_argument('--min-val', type=int, default=1, help='Min value')
+    parser.add_argument('--t', type=int, default=1, help='Number of test cases')
+    parser.add_argument('--type', choices=['array', 'tree', 'graph', 'string', 'pairs'], default='array')
+    parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--weighted', action='store_true', help='Add weights to graph/tree edges')
+    args = parser.parse_args()
+
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    print(args.t)
+    for _ in range(args.t):
+        if args.type == 'array':
+            arr = gen_array(args)
+            print(len(arr))
+            print(' '.join(map(str, arr)))
+
+        elif args.type == 'tree':
+            n = random.randint(2, args.n)
+            edges = gen_tree(n)
+            print(n)
+            for u, v in edges:
+                if args.weighted:
+                    w = random.randint(args.min_val, args.max_val)
+                    print(f"{u} {v} {w}")
+                else:
+                    print(f"{u} {v}")
+
+        elif args.type == 'graph':
+            n = random.randint(2, args.n)
+            m = random.randint(n - 1, min(n * (n - 1) // 2, n + n))
+            edges = gen_graph(n, m)
+            print(f"{n} {len(edges)}")
+            for u, v in edges:
+                if args.weighted:
+                    w = random.randint(args.min_val, args.max_val)
+                    print(f"{u} {v} {w}")
+                else:
+                    print(f"{u} {v}")
+
+        elif args.type == 'string':
+            print(gen_string(args))
+
+        elif args.type == 'pairs':
+            pairs = gen_pairs(args)
+            print(len(pairs))
+            for x, y in pairs:
+                print(f"{x} {y}")
+
+if __name__ == '__main__':
+    main()

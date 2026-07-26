@@ -1,0 +1,107 @@
+#!/bin/bash
+# Stress Tester — compare brute force vs solution on random inputs
+# Usage: cp-stress <brute.cpp> <solution.cpp> [test_generator.cpp]
+# If no generator, creates a random one
+
+set -e
+
+if [ $# -lt 2 ]; then
+    echo "Usage: cp-stress <brute.cpp> <solution.cpp> [generator.cpp]"
+    echo "  Compares brute force vs solution on random test cases"
+    echo "  Stops at first mismatch"
+    exit 1
+fi
+
+BRUTE="$1"
+SOL="$2"
+GEN="${3:-}"
+DIR="$(dirname "$SOL")"
+TESTS=100
+MAX_N=20
+MAX_VAL=100
+
+# Create temp dir
+TMPDIR=$(mktemp -d)
+trap "rm -rf $TMPDIR" EXIT
+
+# Compile brute
+echo -n "Compiling brute... "
+g++ -std=c++17 -O2 -o "$TMPDIR/brute" "$BRUTE" 2>&1 && echo "OK" || { echo "FAIL"; exit 1; }
+
+# Compile solution
+echo -n "Compiling solution... "
+g++ -std=c++17 -O2 -o "$TMPDIR/sol" "$SOL" 2>&1 && echo "OK" || { echo "FAIL"; exit 1; }
+
+# Compile or create generator
+if [ -n "$GEN" ]; then
+    echo -n "Compiling generator... "
+    g++ -std=c++17 -O2 -o "$TMPDIR/gen" "$GEN" 2>&1 && echo "OK" || { echo "FAIL"; exit 1; }
+else
+    cat > "$TMPDIR/gen.cpp" << 'GEN'
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+    srand(time(0) ^ (unsigned long long)new char);
+    int n = rand() % 20 + 1;
+    int t = 1;
+    cout << t << "\n";
+    cout << n << "\n";
+    for (int i = 0; i < n; i++) cout << rand() % 100 + 1 << " ";
+    cout << "\n";
+}
+GEN
+    echo -n "Compiling generator... "
+    g++ -std=c++17 -O2 -o "$TMPDIR/gen" "$TMPDIR/gen.cpp" 2>&1 && echo "OK" || { echo "FAIL"; exit 1; }
+fi
+
+# Run tests
+echo "Running $TESTS tests..."
+echo ""
+
+for i in $(seq 1 $TESTS); do
+    # Generate test
+    "$TMPDIR/gen" > "$TMPDIR/input.txt"
+
+    # Run both
+    BRUTE_OUT=$(timeout 2 "$TMPDIR/brute" < "$TMPDIR/input.txt" 2>&1)
+    BRUTE_EXIT=$?
+    SOL_OUT=$(timeout 2 "$TMPDIR/sol" < "$TMPDIR/input.txt" 2>&1)
+    SOL_EXIT=$?
+
+    # Check for crashes/TLE
+    if [ $BRUTE_EXIT -eq 124 ]; then
+        echo "Test $i: Brute TLE"
+        continue
+    fi
+    if [ $SOL_EXIT -eq 124 ]; then
+        echo "Test $i: Solution TLE"
+        cat "$TMPDIR/input.txt"
+        exit 1
+    fi
+    if [ $BRUTE_EXIT -ne 0 ]; then
+        echo "Test $i: Brute crash (exit $BRUTE_EXIT)"
+        continue
+    fi
+    if [ $SOL_EXIT -ne 0 ]; then
+        echo "Test $i: Solution crash (exit $SOL_EXIT)"
+        cat "$TMPDIR/input.txt"
+        exit 1
+    fi
+
+    # Compare
+    if [ "$BRUTE_OUT" != "$SOL_OUT" ]; then
+        echo "❌ MISMATCH on test $i"
+        echo "--- Input ---"
+        cat "$TMPDIR/input.txt"
+        echo "--- Brute ---"
+        echo "$BRUTE_OUT"
+        echo "--- Solution ---"
+        echo "$SOL_OUT"
+        exit 1
+    fi
+
+    echo -n "."
+done
+
+echo ""
+echo "✅ All $TESTS tests passed"

@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""
+Snippet Expander — expand short codes to full C++ templates
+Usage: cp-expand <file.cpp>     # expand snippets in a file
+       cp-expand --list        # list all available snippets
+
+In your code, type a snippet code and run cp-expand to replace it.
+"""
+import sys, re
+
+SNIPPETS = {
+    # Data Structures
+    'dsu': '''struct DSU {
+    vector<int> par, sz;
+    DSU(int n) : par(n), sz(n, 1) { iota(par.begin(), par.end(), 0); }
+    int find(int u) { return u == par[u] ? u : par[u] = find(par[u]); }
+    void merge(int u, int v) {
+        u = find(u); v = find(v);
+        if (u == v) return;
+        if (sz[u] < sz[v]) swap(u, v);
+        par[u] = v; sz[v] += sz[u];
+    }
+};''',
+
+    'seg': '''struct SegTree {
+    int n; vector<int> tree;
+    SegTree(int n) : n(n), tree(4*n, 0) {}
+    void build(vector<int>& a, int node, int l, int r) {
+        if (l == r) { tree[node] = a[l]; return; }
+        int mid = (l+r)/2;
+        build(a, node*2, l, mid); build(a, node*2+1, mid+1, r);
+        tree[node] = tree[node*2] + tree[node*2+1];
+    }
+    void update(int node, int l, int r, int i, int v) {
+        if (l == r) { tree[node] = v; return; }
+        int mid = (l+r)/2;
+        if (i <= mid) update(node*2, l, mid, i, v);
+        else update(node*2+1, mid+1, r, i, v);
+        tree[node] = tree[node*2] + tree[node*2+1];
+    }
+    int query(int node, int l, int r, int ql, int qr) {
+        if (qr < l || ql > r) return 0;
+        if (ql <= l && r <= qr) return tree[node];
+        int mid = (l+r)/2;
+        return query(node*2, l, mid, ql, qr) + query(node*2+1, mid+1, r, ql, qr);
+    }
+};''',
+
+    'seglazy': '''struct LazySegTree {
+    int n; vector<int> tree, lazy;
+    LazySegTree(int n) : n(n), tree(4*n, 0), lazy(4*n, 0) {}
+    void push(int node) {
+        if (!lazy[node]) return;
+        tree[node*2] += lazy[node]; tree[node*2+1] += lazy[node];
+        lazy[node*2] += lazy[node]; lazy[node*2+1] += lazy[node];
+        lazy[node] = 0;
+    }
+    void update(int node, int l, int r, int ql, int qr, int v) {
+        if (qr < l || ql > r) return;
+        if (ql <= l && r <= qr) { tree[node] += v; lazy[node] += v; return; }
+        push(node); int mid = (l+r)/2;
+        update(node*2, l, mid, ql, qr, v); update(node*2+1, mid+1, r, ql, qr, v);
+        tree[node] = max(tree[node*2], tree[node*2+1]);
+    }
+    int query(int node, int l, int r, int ql, int qr) {
+        if (qr < l || ql > r) return 0;
+        if (ql <= l && r <= qr) return tree[node];
+        push(node); int mid = (l+r)/2;
+        return max(query(node*2, l, mid, ql, qr), query(node*2+1, mid+1, r, ql, qr));
+    }
+};''',
+
+    'bit': '''struct BIT {
+    int n; vector<int> tree;
+    BIT(int n) : n(n), tree(n+1, 0) {}
+    void update(int i, int v) { for (; i <= n; i += i & -i) tree[i] += v; }
+    int query(int i) { int s = 0; for (; i > 0; i -= i & -i) s += tree[i]; return s; }
+    int query(int l, int r) { return query(r) - query(l-1); }
+};''',
+
+    'trie': '''struct Trie {
+    struct Node { int ch[26] = {}, cnt = 0; } *root;
+    Trie() { root = new Node(); }
+    void insert(string& s) {
+        Node* cur = root;
+        for (char c : s) {
+            int idx = c - 'a';
+            if (!cur->ch[idx]) cur->ch[idx] = new Node();
+            cur = cur->ch[idx];
+            cur->cnt++;
+        }
+    }
+    int search(string& s) {
+        Node* cur = root;
+        for (char c : s) {
+            int idx = c - 'a';
+            if (!cur->ch[idx]) return 0;
+            cur = cur->ch[idx];
+        }
+        return cur->cnt;
+    }
+};''',
+
+    # Graph
+    'djk': '''vector<long long> dijkstra(int n, vector<vector<pair<int,int>>>& adj, int src) {
+    vector<long long> dist(n, LINF);
+    priority_queue<pair<long long,int>, vector<pair<long long,int>>, greater<>> pq;
+    dist[src] = 0; pq.push({0, src});
+    while (!pq.empty()) {
+        auto [d, u] = pq.top(); pq.pop();
+        if (d > dist[u]) continue;
+        for (auto [v, w] : adj[u]) {
+            if (dist[u] + w < dist[v]) {
+                dist[v] = dist[u] + w;
+                pq.push({dist[v], v});
+            }
+        }
+    }
+    return dist;
+}''',
+
+    'bfs': '''vector<int> bfs(vector<vector<int>>& adj, int src) {
+    int n = adj.size();
+    vector<int> dist(n, -1);
+    queue<int> q;
+    dist[src] = 0; q.push(src);
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int v : adj[u]) {
+            if (dist[v] == -1) { dist[v] = dist[u] + 1; q.push(v); }
+        }
+    }
+    return dist;
+}''',
+
+    'topo': '''vector<int> topo_sort(int n, vector<vector<int>>& adj) {
+    vector<int> indeg(n, 0);
+    for (int u = 0; u < n; u++) for (int v : adj[u]) indeg[v]++;
+    queue<int> q;
+    for (int i = 0; i < n; i++) if (indeg[i] == 0) q.push(i);
+    vector<int> order;
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        order.push_back(u);
+        for (int v : adj[u]) if (--indeg[v] == 0) q.push(v);
+    }
+    return order;
+}''',
+
+    'lca': '''const int LG = 17;
+vector<int> adj[300005];
+int par[300005][LG+1], dep[300005];
+void dfs_lca(int u, int p) {
+    par[u][0] = p; dep[u] = dep[p] + 1;
+    for (int i = 1; i <= LG; i++) par[u][i] = par[par[u][i-1]][i-1];
+    for (int v : adj[u]) if (v != p) dfs_lca(v, u);
+}
+int lca(int u, int v) {
+    if (dep[u] < dep[v]) swap(u, v);
+    for (int k = LG; k >= 0; k--) if (dep[par[u][k]] >= dep[v]) u = par[u][k];
+    if (u == v) return u;
+    for (int k = LG; k >= 0; k--) if (par[u][k] != par[v][k]) u = par[u][k], v = par[v][k];
+    return par[u][0];
+}''',
+
+    # Math
+    'modpow': '''long long mod_pow(long long a, long long b, long long m) {
+    long long ans = 1; a %= m;
+    while (b) { if (b & 1) ans = ans * a % m; a = a * a % m; b >>= 1; }
+    return ans;
+}''',
+
+    'ncr': '''const int MAXN = 2e6+5;
+long long fact[MAXN], inv_fact[MAXN];
+long long mod_pow(long long a, long long b, long long m) {
+    long long ans = 1; a %= m;
+    while (b) { if (b & 1) ans = ans * a % m; a = a * a % m; b >>= 1; }
+    return ans;
+}
+void precompute() {
+    fact[0] = 1;
+    for (int i = 1; i < MAXN; i++) fact[i] = fact[i-1] * i % MOD;
+    inv_fact[MAXN-1] = mod_pow(fact[MAXN-1], MOD-2, MOD);
+    for (int i = MAXN-2; i >= 0; i--) inv_fact[i] = inv_fact[i+1] * (i+1) % MOD;
+}
+long long nCr(int n, int r) {
+    if (r < 0 || r > n) return 0;
+    return fact[n] % MOD * inv_fact[r] % MOD * inv_fact[n-r] % MOD;
+}''',
+
+    'sieve': '''const int MAXN = 1e6+5;
+int spf[MAXN];
+void sieve() {
+    for (int i = 2; i < MAXN; i++) spf[i] = i;
+    for (int i = 2; i*i < MAXN; i++)
+        if (spf[i] == i)
+            for (int j = i*i; j < MAXN; j += i)
+                if (spf[j] == j) spf[j] = i;
+}''',
+
+    # Strings
+    'kmp': '''vector<int> compute_lps(string& p) {
+    int n = p.size();
+    vector<int> lps(n, 0);
+    for (int i = 1, len = 0; i < n; ) {
+        if (p[i] == p[len]) { lps[i++] = ++len; }
+        else if (len) len = lps[len-1];
+        else lps[i++] = 0;
+    }
+    return lps;
+}
+vector<int> kmp_search(string& s, string& p) {
+    vector<int> lps = compute_lps(p), matches;
+    for (int i = 0, j = 0; i < (int)s.size(); ) {
+        if (s[i] == p[j]) { i++; j++; }
+        if (j == (int)p.size()) { matches.push_back(i-j); j = lps[j-1]; }
+        else if (i < (int)s.size() && s[i] != p[j]) { j ? j = lps[j-1] : i++; }
+    }
+    return matches;
+}''',
+
+    # Misc
+    'mint': '''template<const int MOD>
+struct mint {
+    int v;
+    mint(long long x = 0) : v(x % MOD) { if (v < 0) v += MOD; }
+    mint operator+(mint o) const { return mint(v + o.v); }
+    mint operator-(mint o) const { return mint(v - o.v + MOD); }
+    mint operator*(mint o) const { return mint(1LL * v * o.v); }
+    mint pow(long long k) const { mint x = *this, r = 1; for (; k; k >>= 1) { if (k & 1) r = r * x; x = x * x; } return r; }
+    mint inv() const { return pow(MOD-2); }
+    mint operator/(mint o) const { return *this * o.inv(); }
+    bool operator==(mint o) const { return v == o.v; }
+    friend ostream& operator<<(ostream& os, mint m) { return os << m.v; }
+};''',
+}
+
+def expand_in_file(filepath):
+    """Find and replace snippet codes in a file"""
+    with open(filepath) as f:
+        content = f.read()
+
+    original = content
+    for code, expansion in SNIPPETS.items():
+        # Match the code as a standalone word (not inside a string/comment)
+        pattern = r'\b' + re.escape(code) + r'\b'
+        if re.search(pattern, content):
+            content = re.sub(pattern, expansion, content)
+            print(f"  Expanded: {code}")
+
+    if content != original:
+        with open(filepath, 'w') as f:
+            f.write(content)
+        return True
+    return False
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] == '--list':
+        print("Available snippets:")
+        print("-" * 40)
+        for code in sorted(SNIPPETS.keys()):
+            first_line = SNIPPETS[code].split('\n')[0][:50]
+            print(f"  {code:12s} → {first_line}...")
+        print(f"\nTotal: {len(SNIPPETS)} snippets")
+        return
+
+    filepath = sys.argv[1]
+    if not os.path.exists(filepath):
+        print(f"File not found: {filepath}")
+        sys.exit(1)
+
+    print(f"Expanding snippets in {filepath}...")
+    if expand_in_file(filepath):
+        print("Done!")
+    else:
+        print("No snippets found to expand")
+
+if __name__ == '__main__':
+    main()

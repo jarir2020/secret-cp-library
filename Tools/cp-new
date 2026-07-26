@@ -1,0 +1,124 @@
+#!/bin/bash
+# CP Starter Kit — create a new problem file from template
+# Usage: cp-new <contest_id> <problem_letter>
+# Example: cp-new 2075 A
+
+set -e
+
+TOOLS_DIR="$(cd "$(dirname "$0")" && pwd)"
+TEMPLATE_DIR="$(dirname "$TOOLS_DIR")"
+
+if [ $# -lt 2 ]; then
+    echo "Usage: cp-new <contest_id> <problem_letter>"
+    echo "Example: cp-new 2075 A"
+    exit 1
+fi
+
+CONTEST="$1"
+PROBLEM="$2"
+DIR="${CONTEST}/${PROBLEM}"
+FILE="${DIR}/${PROBLEM}.cpp"
+
+if [ -f "$FILE" ]; then
+    echo "File already exists: $FILE"
+    exit 1
+fi
+
+mkdir -p "$DIR"
+
+# Pick a random template style
+STYLE=$((RANDOM % 3))
+
+if [ $STYLE -eq 0 ]; then
+    cat > "$FILE" << 'TEMPLATE'
+#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+
+#include <bits/stdc++.h>
+using namespace std;
+
+using i64 = long long;
+using u64 = unsigned long long;
+using u32 = unsigned;
+const int MOD = 1e9 + 7;
+const int INF = 1e9 + 5;
+const i64 LINF = 1e18;
+const double EPS = 1e-9;
+
+void solve() {
+    // Your code here
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);
+    cout.tie(0);
+    int t = 1;
+    cin >> t;
+    while (t--) solve();
+    return 0;
+}
+TEMPLATE
+elif [ $STYLE -eq 1 ]; then
+    cat > "$FILE" << 'TEMPLATE'
+#include <bits/stdc++.h>
+using namespace std;
+
+#define ll long long
+#define pii pair<int,int>
+#define vi vector<int>
+#define all(x) (x).begin(),(x).end()
+#define pb push_back
+#define fi first
+#define se second
+
+const int MOD = 1e9+7;
+const int INF = 1e9+5;
+const ll LINF = 1e18;
+
+void solve() {
+    // Your code here
+}
+
+int main() {
+    ios::sync_with_stdio(false); cin.tie(0); cout.tie(0);
+    int t; cin >> t;
+    while (t--) solve();
+}
+TEMPLATE
+else
+    cat > "$FILE" << 'TEMPLATE'
+#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+
+#include <bits/stdc++.h>
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+using namespace __gnu_pbds;
+using namespace std;
+
+#define ordered_set tree<int, null_type, less<int>, rb_tree_tag, tree_order_statistics_node_update>
+using i64 = long long;
+const int MOD = 1e9+7;
+const int INF = 1e9+5;
+const i64 LINF = 1e18;
+
+void solve() {
+    // Your code here
+}
+
+int main() {
+    ios::sync_with_stdio(false); cin.tie(0);
+    int t; cin >> t;
+    while (t--) solve();
+}
+TEMPLATE
+fi
+
+# Create input.txt placeholder
+touch "$DIR/input.txt"
+
+echo "Created: $FILE (style $STYLE)"
+echo "Input:   $DIR/input.txt"
+echo ""
+echo "Run:  cd $DIR && g++ -O2 -o sol $PROBLEM.cpp && ./sol < input.txt"

@@ -1,0 +1,72 @@
+#!/bin/bash
+# Local Judge — compile and test against sample input/output
+# Usage: cp-test <file.cpp> [input.txt] [expected_output.txt]
+# If no input file, uses <dir>/input.txt
+# If no expected output, just runs the solution
+
+set -e
+
+if [ $# -lt 1 ]; then
+    echo "Usage: cp-test <file.cpp> [input.txt] [expected_output.txt]"
+    echo "  Compiles, runs, and compares output"
+    exit 1
+fi
+
+FILE="$1"
+DIR="$(dirname "$FILE")"
+BASE="$(basename "$FILE" .cpp)"
+INPUT="${2:-$DIR/input.txt}"
+EXPECTED="${3:-}"
+TIMEOUT=5
+
+# Compile
+echo -n "Compiling... "
+if ! g++ -std=c++17 -O2 -o "$DIR/$BASE.out" "$FILE" 2>&1; then
+    echo "COMPILE ERROR"
+    exit 1
+fi
+echo "OK"
+
+# Run
+echo -n "Running... "
+if [ -n "$INPUT" ] && [ -f "$INPUT" ]; then
+    OUTPUT=$(timeout $TIMEOUT "$DIR/$BASE.out" < "$INPUT" 2>&1)
+else
+    OUTPUT=$(timeout $TIMEOUT "$DIR/$BASE.out" 2>&1)
+fi
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 124 ]; then
+    echo "TLE (time limit exceeded ${TIMEOUT}s)"
+    exit 1
+elif [ $EXIT_CODE -ne 0 ]; then
+    echo "RUNTIME ERROR (exit code $EXIT_CODE)"
+    echo "$OUTPUT"
+    exit 1
+fi
+echo "OK"
+
+# Show output
+echo ""
+echo "=== Output ==="
+echo "$OUTPUT"
+echo "==============="
+
+# Compare with expected
+if [ -n "$EXPECTED" ] && [ -f "$EXPECTED" ]; then
+    echo ""
+    EXPECTED_CONTENT=$(cat "$EXPECTED")
+    if [ "$OUTPUT" = "$EXPECTED_CONTENT" ]; then
+        echo "✅ ACCEPTED"
+    else
+        echo "❌ WRONG ANSWER"
+        echo ""
+        echo "=== Expected ==="
+        echo "$EXPECTED_CONTENT"
+        echo "================"
+    fi
+fi
+
+# Cleanup
+rm -f "$DIR/$BASE.out"

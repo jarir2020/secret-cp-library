@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+"""
+AST Randomizer v2 — creates structurally different versions of a C++ file
+Usage: cp-randomize <file.cpp> [--versions N] [--output-dir DIR]
+"""
+import sys, os, re, random, argparse
+from pathlib import Path
+
+def randomize(content, seed):
+    """Apply structural randomization with given seed"""
+    random.seed(seed)
+    result = content
+
+    # 1. Reorder solve() and main()
+    m = re.search(r'(void solve\(\)\s*\{.*?\n\})\s*\n(int main\(\)\s*\{.*?\n\})', result, re.DOTALL)
+    if m and random.random() < 0.5:
+        solve_f, main_f = m.group(1), m.group(2)
+        rest = result[:m.start()] + result[m.end():]
+        lines = rest.split('\n')
+        idx = 0
+        for i, l in enumerate(lines):
+            s = l.strip()
+            if s.startswith('#') or s.startswith('using') or s.startswith('//') or s.startswith('const') or s == '':
+                idx = i + 1
+        before = '\n'.join(lines[:idx])
+        after = '\n'.join(lines[idx:]).strip()
+        result = before + '\n\n' + solve_f + '\n\n' + main_f + '\n' + after
+
+    # 2. Swap loop types (for -> while)
+    lines = result.split('\n')
+    new_lines = []
+    for line in lines:
+        if '<' in line and '>' in line:
+            new_lines.append(line)
+            continue
+        if random.random() < 0.1:
+            # for(int i = 0; i < n; i++) -> while variant
+            m = re.match(r'(\s*)for\s*\(\s*int\s+(\w+)\s*=\s*(\w+);\s*\2\s*<\s*(\w+);\s*\2\+\+\s*\)', line)
+            if m:
+                indent, var, start, end = m.groups()
+                new_lines.append(f'{indent}int {var} = {start};')
+                new_lines.append(f'{indent}while ({var} < {end}) {{')
+                continue
+        new_lines.append(line)
+    result = '\n'.join(new_lines)
+
+    # 3. Flip simple conditions
+    lines = result.split('\n')
+    new_lines = []
+    for line in lines:
+        if '<' in line and '>' in line:
+            new_lines.append(line)
+            continue
+        if '.size()' in line or '.begin()' in line:
+            new_lines.append(line)
+            continue
+        if random.random() < 0.12:
+            def flip(m):
+                left, op, right = m.group(1), m.group(2), m.group(3)
+                if re.match(r'^[a-z_]\w*$', left) and re.match(r'^[a-z_]\w*$', right):
+                    if op == '>': return f'{right} < {left}'
+                    if op == '<': return f'{right} > {left}'
+                return m.group(0)
+            line = re.sub(r'\b([a-z_]\w*)\s*(>|<)\s*([a-z_]\w*)\b', flip, line)
+        new_lines.append(line)
+    result = '\n'.join(new_lines)
+
+    # 4. Change operator style
+    lines = result.split('\n')
+    new_lines = []
+    for line in lines:
+        if '<' in line and '>' in line:
+            new_lines.append(line)
+            continue
+        if random.random() < 0.15:
+            def change_op(m):
+                var = m.group(1)
+                if re.match(r'^[a-z]\w*$', var) and random.random() < 0.3:
+                    return f'{var} = {var} + {m.group(2)}'
+                return m.group(0)
+            line = re.sub(r'\b(\w+)\s*\+=\s*(\w+)\b', change_op, line)
+        new_lines.append(line)
+    result = '\n'.join(new_lines)
+
+    # 5. Vary test case reading style
+    if random.random() < 0.3:
+        # cin >> t; while(t--) -> while(cin >> t)
+        result = result.replace('cin >> t;\n    while (t--)', 'while (cin >> t)')
+        result = result.replace('cin >> t;\n    while(t--)', 'while (cin >> t)')
+
+    # 6. Vary include style
+    if random.random() < 0.2:
+        result = result.replace('#include <bits/stdc++.h>', '#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <string>\n#include <queue>\n#include <map>\n#include <set>')
+
+    # 7. Add/remove blank lines between functions
+    result = re.sub(r'\n\n\n+', '\n\n', result)
+
+    return result
+
+def main():
+    parser = argparse.ArgumentParser(description='AST Randomizer v2')
+    parser.add_argument('file', help='Input C++ file')
+    parser.add_argument('--versions', '-n', type=int, default=3, help='Number of versions to generate')
+    parser.add_argument('--output-dir', '-o', default='.', help='Output directory')
+    parser.add_argument('--seed', '-s', type=int, default=None, help='Random seed (for reproducibility)')
+    args = parser.parse_args()
+
+    with open(args.file) as f:
+        content = f.read()
+
+    basename = os.path.splitext(os.path.basename(args.file))[0]
+    ext = os.path.splitext(os.path.basename(args.file))[1]
+
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    for i in range(args.versions):
+        seed = args.seed + i if args.seed else random.randint(0, 999999)
+        randomized = randomize(content, seed)
+        out_path = os.path.join(args.output_dir, f"{basename}_v{i+1}{ext}")
+        with open(out_path, 'w') as f:
+            f.write(randomized)
+        print(f"  v{i+1}: {out_path} (seed={seed})")
+
+    print(f"\nGenerated {args.versions} versions in {args.output_dir}")
+
+if __name__ == '__main__':
+    main()
