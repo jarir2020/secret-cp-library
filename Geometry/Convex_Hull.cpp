@@ -96,7 +96,7 @@ double polygon_area(const vector<Point>& poly) {
 }
 
 void solve() {
-    vector<Point> points = {{0, 0}, {1, 1}, {2, 0}, {1, 2}, {0.5, 0.5}};
+    vector<Point> points = {{0, 0}, {1, 1}, {2, 0}, {1, 2}, {1, 1}};
     auto hull = convex_hull(points);
 
     cout << "Convex hull (" << hull.size() << " points):" << endl;

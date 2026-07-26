@@ -27,8 +27,8 @@ const i64 LINF = 1e18;
 const double EPS = 1e-9;
 
 // Modular Exponentiation
-ll mod_pow(ll a, ll b, ll m){
-    ll ans = 1;
+i64 mod_pow(i64 a, i64 b, i64 m){
+    i64 ans = 1;
     a %= m;
     while(b){
         if (b&1) ans = (ans*a) % m;
